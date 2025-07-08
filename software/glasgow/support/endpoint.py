@@ -5,6 +5,8 @@ import re
 from collections import deque
 
 from .aobject import *
+from .logging import dump_hex
+from ..abstract import AbstractInOutPipe
 
 
 __all__ = ["ServerEndpoint", "ClientEndpoint"]
@@ -36,7 +38,8 @@ class ServerEndpoint(aobject, asyncio.Protocol):
             name, metavar=metavar, type=endpoint, nargs=nargs, default=default,
             help=help)
 
-    async def __init__(self, name, logger, sock_addr, queue_size=None):
+    async def __init__(self, name, logger, sock_addr, queue_size=None, *,
+                       deprecated_cancel_on_eof=False):
         assert isinstance(sock_addr, tuple)
 
         self.name    = name
@@ -69,6 +72,12 @@ class ServerEndpoint(aobject, asyncio.Protocol):
         self._pos    = 0
 
         self._read_paused = False
+
+        self._cancel_on_eof = deprecated_cancel_on_eof
+        if self._cancel_on_eof:
+            self._log(logging.WARNING,
+                "ServerEndpoint with cancel-on-EOF behavior is deprecated; please fix this applet "
+                "and submit a pull request (thanks in advance!)")
 
     def _log(self, level, message, *args):
         self._logger.log(level, self.name + ": " + message, *args)
@@ -132,12 +141,18 @@ class ServerEndpoint(aobject, asyncio.Protocol):
     async def _refill(self):
         self._future = future = asyncio.Future()
         self._check_future()
-        self._buffer = await future
+        try:
+            self._buffer = await future
+        except (BrokenPipeError, ConnectionResetError):
+            self._buffer = None
         if self._buffer is None:
             self._buffer = b""
             self._log(logging.TRACE, "recv end-of-stream")
             self._recv_epoch += 1
-            raise asyncio.CancelledError
+            if self._cancel_on_eof:
+                raise asyncio.CancelledError
+            else:
+                raise EOFError
 
     async def recv(self, length=0):
         data = bytearray()
@@ -155,7 +170,7 @@ class ServerEndpoint(aobject, asyncio.Protocol):
             self._check_pushback()
             data += chunk
 
-        self._log(logging.TRACE, "recv <%s>", data.hex())
+        self._log(logging.TRACE, "recv <%s>", dump_hex(data))
         return data
 
     async def recv_until(self, separator):
@@ -181,7 +196,7 @@ class ServerEndpoint(aobject, asyncio.Protocol):
                 self._check_pushback()
                 self._buffer = None
 
-        self._log(logging.TRACE, "recv <%s%s>", data.hex(), separator.hex())
+        self._log(logging.TRACE, "recv <%s%s>", dump_hex(data), separator.hex())
         return data
 
     async def recv_wait(self):
@@ -191,8 +206,8 @@ class ServerEndpoint(aobject, asyncio.Protocol):
 
     async def send(self, data):
         data = bytes(data)
-        if self._send_epoch == self._recv_epoch:
-            self._log(logging.TRACE, "send <%s>", data.hex())
+        if self._transport is not None and self._send_epoch == self._recv_epoch:
+            self._log(logging.TRACE, "send <%s>", dump_hex(data))
             self._transport.write(data)
             return True
         else:
@@ -202,6 +217,23 @@ class ServerEndpoint(aobject, asyncio.Protocol):
     async def close(self):
         if self._transport:
             self._transport.close()
+
+    async def attach_to_pipe(self, inout_pipe: AbstractInOutPipe):
+        async def forward_out():
+            while True:
+                try:
+                    data = await self.recv()
+                except EOFError:
+                    continue
+                await inout_pipe.send(data)
+                await inout_pipe.flush()
+        async def forward_in():
+            while True:
+                data = await inout_pipe.recv(inout_pipe.readable or 1)
+                await self.send(data)
+        async with asyncio.TaskGroup() as group:
+            group.create_task(forward_out())
+            group.create_task(forward_in())
 
 
 class ClientEndpoint(aobject, asyncio.Protocol):

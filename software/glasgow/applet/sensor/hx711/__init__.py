@@ -147,9 +147,9 @@ class SensorHX711Applet(GlasgowApplet):
             "-f", "--frequency", metavar="FREQ", type=float,
             help="set oscillator frequency to FREQ MHz")
 
-        access.add_pin_argument(parser, "clk", default=True)
-        access.add_pin_argument(parser, "din", default=True)
-        access.add_pin_argument(parser, "osc", required=False)
+        access.add_pins_argument(parser, "clk", default=True)
+        access.add_pins_argument(parser, "din", default=True)
+        access.add_pins_argument(parser, "osc", required=False)
 
     def build(self, target, args):
         if args.frequency is None:
@@ -161,9 +161,9 @@ class SensorHX711Applet(GlasgowApplet):
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         iface.add_subtarget(SensorHX711Subtarget(
             ports=iface.get_port_group(
-                clk=args.pin_clk,
-                din=args.pin_din,
-                osc=args.pin_osc,
+                clk=args.clk,
+                din=args.din,
+                osc=args.osc,
             ),
             out_fifo=iface.get_out_fifo(),
             in_fifo=iface.get_in_fifo(),

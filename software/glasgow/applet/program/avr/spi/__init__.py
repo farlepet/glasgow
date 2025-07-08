@@ -6,7 +6,7 @@ import logging
 from amaranth import *
 from amaranth.lib import io
 
-from ....interface.spi_controller import SPIControllerSubtarget, SPIControllerInterface
+from ....interface.spi_controller_deprecated import SPIControllerSubtarget, SPIControllerInterface
 from .... import *
 from .. import *
 
@@ -46,7 +46,8 @@ class ProgramAVRSPIInterface(ProgramAVRInterface):
     async def _command(self, byte1, byte2, byte3, byte4):
         command = [byte1, byte2, byte3, byte4]
         self._log("command %s", "{:08b} {:08b} {:08b} {:08b}".format(*command))
-        result = await self.lower.exchange(command)
+        async with self.lower.select():
+            result = await self.lower.exchange(command)
         self._log("result  %s", "{:08b} {:08b} {:08b} {:08b}".format(*result))
         return result
 
@@ -222,10 +223,10 @@ class ProgramAVRSPIApplet(ProgramAVRApplet):
     def add_build_arguments(cls, parser, access):
         super().add_build_arguments(parser, access)
 
-        access.add_pin_argument(parser, "reset", default=True)
-        access.add_pin_argument(parser, "sck",   default=True)
-        access.add_pin_argument(parser, "cipo",  default=True)
-        access.add_pin_argument(parser, "copi",  default=True)
+        access.add_pins_argument(parser, "reset", default=True)
+        access.add_pins_argument(parser, "sck",   default=True)
+        access.add_pins_argument(parser, "cipo",  default=True)
+        access.add_pins_argument(parser, "copi",  default=True)
 
         parser.add_argument(
             "-f", "--frequency", metavar="FREQ", type=int, default=100,
@@ -234,10 +235,10 @@ class ProgramAVRSPIApplet(ProgramAVRApplet):
     def build(self, target, args):
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         ports=iface.get_port_group(
-                reset = args.pin_reset,
-                sck   = args.pin_sck,
-                cipo  = args.pin_cipo,
-                copi  = args.pin_copi
+                reset = args.reset,
+                sck   = args.sck,
+                cipo  = args.cipo,
+                copi  = args.copi
             )
 
         controller = SPIControllerSubtarget(

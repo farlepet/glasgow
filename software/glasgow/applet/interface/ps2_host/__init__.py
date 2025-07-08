@@ -406,17 +406,17 @@ class PS2HostApplet(GlasgowApplet):
     def add_build_arguments(cls, parser, access):
         super().add_build_arguments(parser, access)
 
-        access.add_pin_argument(parser, "clock", default=True)
-        access.add_pin_argument(parser, "data", default=True)
-        access.add_pin_argument(parser, "reset")
+        access.add_pins_argument(parser, "clock", default=True)
+        access.add_pins_argument(parser, "data", default=True)
+        access.add_pins_argument(parser, "reset")
 
     def build(self, target, args):
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         subtarget = iface.add_subtarget(PS2HostSubtarget(
             ports =iface.get_port_group(
-                clock = args.pin_clock,
-                data = args.pin_data,
-                reset = args.pin_reset
+                clock = args.clock,
+                data = args.data,
+                reset = args.reset
             ),
             in_fifo=iface.get_in_fifo(),
             out_fifo=iface.get_out_fifo(),
@@ -425,7 +425,7 @@ class PS2HostApplet(GlasgowApplet):
 
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args,
-            pull_high={args.pin_clock, args.pin_data})
+            pull_high={args.clock, args.data})
         return PS2HostInterface(iface, self.logger)
 
     @classmethod

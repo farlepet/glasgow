@@ -3,6 +3,7 @@
 # Ref: https://github.com/NetworkBlockDevice/nbd/blob/master/cliserv.h
 # Ref: https://github.com/NetworkBlockDevice/nbd/blob/master/nbd.h
 # Accession: G00089
+
 import asyncio, logging, struct, argparse
 from dataclasses import dataclass
 
@@ -160,7 +161,7 @@ class NBDServer:
                 await self._send_info(option)
                 await self._send_option(option, NBD_REP_ACK, struct.pack('>I', option))
             else:
-                self._logger.warn(f"client requested unknown option {option}")
+                self._logger.warning(f"client requested unknown option {option}")
                 await self._send_option(option, NBD_REP_ERR_UNSUP)
 
     async def _send_info(self, option):
@@ -214,7 +215,7 @@ class NBDServer:
                 await self._write_simple_reply(0, req.cookie)
             elif req.command == NBD_CMD_DISC:
                 await self._endpoint.close()
-                break;
+                break
             else:
                 await self._write_simple_reply(NBD_REP_ERR_INVALID, req.cookie)
 
@@ -256,8 +257,12 @@ async def main():
             disk[offset:offset+len(data)] = data
 
     endpoint = await ServerEndpoint("socket", logger, args.endpoint)
-    conn = Ramdisk(endpoint, logger, writable=True)
-    await conn.handle()
+    ramdisk = Ramdisk(endpoint, logger, writable=True)
+    while True:
+        try:
+            await ramdisk.handle()
+        except EOFError:
+            pass
 
 
 if __name__ == '__main__':

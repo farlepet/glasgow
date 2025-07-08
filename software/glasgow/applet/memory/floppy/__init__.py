@@ -624,9 +624,9 @@ class MemoryFloppyApplet(GlasgowApplet):
     splitting the FDC ribbon cable such that two 20-pin IDC connectors may be crimped onto it
     for easy connection as follows:
 
-        * Conductors 1-7 are unused (cut off the cable);
-        * Conductors 8-23 are crimped to connect to pins 3-18 of connector A;
-        * Conductors 24-34 are crimped to connect to pins 3-14 of connector B.
+    * Conductors 1-7 are unused (cut off the cable);
+    * Conductors 8-23 are crimped to connect to pins 3-18 of connector A;
+    * Conductors 24-34 are crimped to connect to pins 3-14 of connector B.
 
     If desired, conductors 2-3 may be crimped to connect to pins 15-16 of connector B to connect
     the REDWC pin as well.
@@ -639,42 +639,42 @@ class MemoryFloppyApplet(GlasgowApplet):
     def add_build_arguments(cls, parser, access):
         super().add_build_arguments(parser, access)
 
-        access.add_pin_argument(parser, "index", default=True)
-        access.add_pin_argument(parser, "motea", default=True)
-        access.add_pin_argument(parser, "drvsb", default=True)
-        access.add_pin_argument(parser, "drvsa", default=True)
-        access.add_pin_argument(parser, "moteb", default=True)
-        access.add_pin_argument(parser, "dir", default=True)
-        access.add_pin_argument(parser, "step", default=True)
-        access.add_pin_argument(parser, "wdata", default=True)
-        access.add_pin_argument(parser, "wgate", default=True)
-        access.add_pin_argument(parser, "trk00", default=True)
-        access.add_pin_argument(parser, "wpt", default=True)
-        access.add_pin_argument(parser, "rdata", default=True)
-        access.add_pin_argument(parser, "side1", default=True)
-        access.add_pin_argument(parser, "dskchg", default=True)
-        access.add_pin_argument(parser, "redwc", default=True)
+        access.add_pins_argument(parser, "index", default=True)
+        access.add_pins_argument(parser, "motea", default=True)
+        access.add_pins_argument(parser, "drvsb", default=True)
+        access.add_pins_argument(parser, "drvsa", default=True)
+        access.add_pins_argument(parser, "moteb", default=True)
+        access.add_pins_argument(parser, "dir", default=True)
+        access.add_pins_argument(parser, "step", default=True)
+        access.add_pins_argument(parser, "wdata", default=True)
+        access.add_pins_argument(parser, "wgate", default=True)
+        access.add_pins_argument(parser, "trk00", default=True)
+        access.add_pins_argument(parser, "wpt", default=True)
+        access.add_pins_argument(parser, "rdata", default=True)
+        access.add_pins_argument(parser, "side1", default=True)
+        access.add_pins_argument(parser, "dskchg", default=True)
+        access.add_pins_argument(parser, "redwc", default=True)
 
     def build(self, target, args):
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         self._sys_clk_freq = target.sys_clk_freq
         iface.add_subtarget(ShugartFloppySubtarget(
             ports=iface.get_port_group(
-                index=args.pin_index,
-                motea=args.pin_motea,
-                drvsb=args.pin_drvsb,
-                drvsa=args.pin_drvsa,
-                moteb=args.pin_moteb,
-                dir=args.pin_dir,
-                step=args.pin_step,
-                wdata=args.pin_wdata,
-                wgate=args.pin_wgate,
-                trk00=args.pin_trk00,
-                wpt=args.pin_wpt,
-                rdata=args.pin_rdata,
-                side1=args.pin_side1,
-                dskchg=args.pin_dskchg,
-                redwc=args.pin_redwc,
+                index=args.index,
+                motea=args.motea,
+                drvsb=args.drvsb,
+                drvsa=args.drvsa,
+                moteb=args.moteb,
+                dir=args.dir,
+                step=args.step,
+                wdata=args.wdata,
+                wgate=args.wgate,
+                trk00=args.trk00,
+                wpt=args.wpt,
+                rdata=args.rdata,
+                side1=args.side1,
+                dskchg=args.dskchg,
+                redwc=args.redwc,
             ),
             out_fifo=iface.get_out_fifo(),
             in_fifo=iface.get_in_fifo(auto_flush=False),
@@ -692,7 +692,7 @@ class MemoryFloppyApplet(GlasgowApplet):
     async def run(self, device, args):
         pulls = set()
         if args.pulls:
-            pulls = {args.pin_index, args.pin_trk00, args.pin_wpt, args.pin_rdata, args.pin_dskchg}
+            pulls = {args.index, args.trk00, args.wpt, args.rdata, args.dskchg}
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args,
                                                            pull_high=pulls)
         return ShugartFloppyInterface(iface, self.logger, self._sys_clk_freq)
@@ -753,10 +753,10 @@ class MemoryFloppyAppletTool(GlasgowAppletTool, applet=MemoryFloppyApplet):
     the necessary geometry, and all areas that were not recovered from the raw image are filled
     with the following repeating byte patterns:
 
-        * <FA11> for sectors completely missing from the raw image;
-        * <DEAD> for sectors whose header was found but data was corrupted;
-        * <BAAD> for sectors that were marked as "deleted" (i.e. bad blocks) in the raw image,
-          and no decoding was attempted.
+    * <FA11> for sectors completely missing from the raw image;
+    * <DEAD> for sectors whose header was found but data was corrupted;
+    * <BAAD> for sectors that were marked as "deleted" (i.e. bad blocks) in the raw image,
+        and no decoding was attempted.
 
     ("Deleted" sectors are not currently recognized.)
     """

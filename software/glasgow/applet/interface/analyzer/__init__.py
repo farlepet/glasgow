@@ -57,12 +57,15 @@ class AnalyzerApplet(GlasgowApplet):
     def add_build_arguments(cls, parser, access):
         super().add_build_arguments(parser, access)
 
-        access.add_pin_set_argument(parser, "i", width=range(1, 17), default=1)
+        access.add_pins_argument(parser, "i", width=range(1, 17), default=1)
+        parser.add_argument(
+            "--pin-names", metavar="NAMES", dest="names", default=None,
+            help="optional comma separated list of pin names")
 
     def build(self, target, args):
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         subtarget = iface.add_subtarget(AnalyzerSubtarget(
-            ports=iface.get_port_group(i = args.pin_set_i),
+            ports=iface.get_port_group(i = args.i),
             in_fifo=iface.get_in_fifo(),
         ))
 
@@ -85,9 +88,9 @@ class AnalyzerApplet(GlasgowApplet):
         pull_low  = set()
         pull_high = set()
         if args.pull_ups:
-            pull_high = set(args.pin_set_i)
+            pull_high = set(args.i)
         if args.pull_downs:
-            pull_low = set(args.pin_set_i)
+            pull_low = set(args.i)
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args,
                                                            pull_low=pull_low, pull_high=pull_high)
         return AnalyzerInterface(iface, self._event_sources)
@@ -101,8 +104,16 @@ class AnalyzerApplet(GlasgowApplet):
     async def interact(self, device, args, iface):
         vcd_writer = VCDWriter(args.file, timescale="1 ns", check_values=False)
         signals = []
+
+        names = []
+        if args.names:
+            names = args.names.split(",")
+            assert len(names) == self._event_sources[0].width
+        else:
+            names = [ f"pin[{index}]" for index in range(self._event_sources[0].width) ]
+
         for index in range(self._event_sources[0].width):
-            signals.append(vcd_writer.register_var(scope="", name=f"pin[{index}]",
+            signals.append(vcd_writer.register_var(scope="glasgow", name=names[index],
                 var_type="wire", size=1, init=0))
 
         try:

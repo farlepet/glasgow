@@ -13,7 +13,7 @@ All of our chat channels are bridged together; regardless of which one you choos
 
 .. _issues: https://github.com/GlasgowEmbedded/glasgow/issues
 .. _irc: https://web.libera.chat/#glasgow
-.. _irclogs: https://libera.irclog.whitequark.org/glasgow
+.. _irclogs: https://libera.catirclogs.org/glasgow
 .. _matrix: https://matrix.to/#/#glasgow-interface-explorer:matrix.org
 .. _discord: https://1bitsquared.com/pages/chat
 
@@ -63,5 +63,5 @@ The Glasgow project has been built by its many `contributors <https://github.com
 * `@smunaut <https://github.com/smunaut>`_ provided advice crucial for stability and performance of USB communication
 * `@electroniceel <https://github.com/electroniceel>`_ improved the hardware for revC2, designed the test jig and is working on advanced protection circuitry
 * `@Attie <https://github.com/attie>`_ improved and refactored many applets, hardware photos
-* `@mwkmwkmwk <https://github.com/mwkmwkmwk>`_ does important maintenance work to keep the codebase in good shape
+* `@wanda-phi <https://github.com/wanda-phi>`_ does important maintenance work to keep the codebase in good shape
 * `@isabelburgos <https://github.com/isabelburgos>`_ brought many applets up to date

@@ -1005,8 +1005,8 @@ class JTAGProbeApplet(GlasgowApplet):
         super().add_build_arguments(parser, access)
 
         for pin in ("tck", "tms", "tdi", "tdo"):
-            access.add_pin_argument(parser, pin, default=True)
-        access.add_pin_argument(parser, "trst")
+            access.add_pins_argument(parser, pin, default=True)
+        access.add_pins_argument(parser, "trst")
 
         parser.add_argument(
             "-f", "--frequency", metavar="FREQ", type=int, default=100,
@@ -1016,11 +1016,11 @@ class JTAGProbeApplet(GlasgowApplet):
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         iface.add_subtarget(JTAGProbeSubtarget(
             ports=iface.get_port_group(
-                tck=args.pin_tck,
-                tms=args.pin_tms,
-                tdi=args.pin_tdi,
-                tdo=args.pin_tdo,
-                trst=args.pin_trst,
+                tck=args.tck,
+                tms=args.tms,
+                tdi=args.tdi,
+                tdo=args.tdo,
+                trst=args.trst,
             ),
             out_fifo=iface.get_out_fifo(),
             in_fifo=iface.get_in_fifo(auto_flush=False),
@@ -1060,7 +1060,7 @@ class JTAGProbeApplet(GlasgowApplet):
 
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
-        jtag_iface = JTAGProbeInterface(iface, self.logger, has_trst=args.pin_trst is not None)
+        jtag_iface = JTAGProbeInterface(iface, self.logger, has_trst=args.trst is not None)
         jtag_iface.scan_ir_max_length = args.scan_ir_max_length
         jtag_iface.scan_dr_max_length = args.scan_dr_max_length
         return jtag_iface
@@ -1089,7 +1089,7 @@ class JTAGProbeApplet(GlasgowApplet):
 
     @classmethod
     def add_interact_arguments(cls, parser):
-        p_operation = parser.add_subparsers(dest="operation", metavar="OPERATION", required=True)
+        p_operation = parser.add_subparsers(dest="operation", metavar="OPERATION")
 
         p_scan = p_operation.add_parser(
             "scan", help="scan JTAG chain and attempt to identify devices",
@@ -1143,7 +1143,7 @@ class JTAGProbeApplet(GlasgowApplet):
             return
         self.logger.info("discovered %d TAPs", len(idcodes))
 
-        if args.operation == "scan":
+        if args.operation in (None, "scan"):
             ir_layout = jtag_iface.interrogate_ir(ir_value,
                 tap_count=len(idcodes), ir_lengths=args.ir_lengths, check=False)
             if not ir_layout:

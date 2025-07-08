@@ -201,8 +201,8 @@ class SpyBiWireProbeApplet(GlasgowApplet):
     def add_build_arguments(cls, parser, access):
         super().add_build_arguments(parser, access)
 
-        access.add_pin_argument(parser, "sbwtck", default=True)
-        access.add_pin_argument(parser, "sbwtdio", default=True)
+        access.add_pins_argument(parser, "sbwtck", default=True)
+        access.add_pins_argument(parser, "sbwtdio", default=True)
 
         # set up for f_TCLK=350 kHz
         parser.add_argument(
@@ -213,8 +213,8 @@ class SpyBiWireProbeApplet(GlasgowApplet):
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         iface.add_subtarget(SpyBiWireProbeSubtarget(
             ports =iface.get_port_group(
-                sbwtck = args.pin_sbwtck,
-                sbwtdio = args.pin_sbwtdio 
+                sbwtck = args.sbwtck,
+                sbwtdio = args.sbwtdio
             ),
             out_fifo=iface.get_out_fifo(),
             in_fifo=iface.get_in_fifo(auto_flush=False),

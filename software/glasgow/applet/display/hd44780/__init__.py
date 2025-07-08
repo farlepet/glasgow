@@ -209,19 +209,19 @@ class DisplayHD44780Applet(GlasgowApplet):
     @classmethod
     def add_build_arguments(cls, parser, access):
         access.add_build_arguments(parser)
-        access.add_pin_argument(parser, "rs", default=True)
-        access.add_pin_argument(parser, "rw", default=True)
-        access.add_pin_argument(parser, "e", default=True)
-        access.add_pin_set_argument(parser, "d", width=4, default=True)
+        access.add_pins_argument(parser, "rs", default=True)
+        access.add_pins_argument(parser, "rw", default=True)
+        access.add_pins_argument(parser, "e", default=True)
+        access.add_pins_argument(parser, "d", width=4, default=True)
 
     def build(self, target, args):
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         iface.add_subtarget(HD44780Subtarget(
             ports=iface.get_port_group(
-                rs=args.pin_rs,
-                rw=args.pin_rw,
-                e=args.pin_e,
-                d=args.pin_set_d,
+                rs=args.rs,
+                rw=args.rw,
+                e=args.e,
+                d=args.d,
             ),
             out_fifo=iface.get_out_fifo(),
             in_fifo=iface.get_in_fifo(),
@@ -238,9 +238,9 @@ class DisplayHD44780Applet(GlasgowApplet):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args=None)
 
         if args.reset:
-            await device.set_voltage(args.port_spec, 0.0)
+            await device.set_voltage("AB", 0.0)
             await asyncio.sleep(0.3)
-        await device.set_voltage(args.port_spec, 5.0)
+        await device.set_voltage("AB", 5.0)
         await asyncio.sleep(0.040) # wait 40ms after reset
 
         # TODO: abstract this away into a HD44780Interface

@@ -1,36 +1,26 @@
-import types
 from amaranth import *
-from amaranth.lib import io
 
-from ... import *
+from glasgow.applet import GlasgowAppletV2TestCase, synthesis_test, applet_v2_simulation_test
 from . import SPIControllerApplet
 
 
-class SPIControllerAppletTestCase(GlasgowAppletTestCase, applet=SPIControllerApplet):
+class SPIControllerAppletTestCase(GlasgowAppletV2TestCase, applet=SPIControllerApplet):
     @synthesis_test
     def test_build(self):
-        self.assertBuilds(args=["--pin-sck",  "0", "--pin-cs",   "1",
-                                "--pin-copi", "2", "--pin-cipo", "3"])
+        self.assertBuilds()
 
-    def setup_loopback(self):
-        self.build_simulated_applet()
-        mux_iface = self.applet.mux_interface
-        ports = mux_iface._subtargets[0].ports
-        m = Module()
-        m.d.comb += ports.cipo.i.eq(ports.copi.o)
-        self.target.add_submodule(m)
+    def setup_loopback(self, assembly):
+        assembly.connect_pins("A2", "A3")
 
-    @applet_simulation_test("setup_loopback",
-                            ["--pin-sck",  "0", "--pin-cs", "1",
-                             "--pin-copi", "2", "--pin-cipo",   "3",
-                             "--frequency", "5000"])
-    @types.coroutine
-    def test_loopback(self):
-        mux_iface = self.applet.mux_interface
-        spi_iface = yield from self.run_simulated_applet()
-
-        ports = mux_iface._subtargets[0].ports
-        self.assertEqual((yield ports.cs.o), 1)
-        result = yield from spi_iface.exchange([0xAA, 0x55, 0x12, 0x34])
-        self.assertEqual(result, bytearray([0xAA, 0x55, 0x12, 0x34]))
-        self.assertEqual((yield ports.cs.o), 1)
+    @applet_v2_simulation_test(prepare=setup_loopback,
+                               args=["--sck",  "A0", "--cs",   "A1",
+                                     "--copi", "A2", "--cipo", "A3"])
+    async def test_loopback(self, applet, ctx):
+        cs = applet.assembly.get_pin("A1")
+        self.assertEqual(ctx.get(cs.o), 1)
+        async with applet.spi_iface.select():
+            result = await applet.spi_iface.exchange([0xAA, 0x55, 0x12, 0x34])
+            self.assertEqual(ctx.get(cs.o), 0)
+            self.assertEqual(result, bytearray([0xAA, 0x55, 0x12, 0x34]))
+        await ctx.tick()
+        self.assertEqual(ctx.get(cs.o), 1)

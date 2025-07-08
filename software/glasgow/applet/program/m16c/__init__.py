@@ -324,11 +324,11 @@ class ProgramM16CApplet(GlasgowApplet):
     def add_build_arguments(cls, parser, access):
         super().add_build_arguments(parser, access)
 
-        access.add_pin_argument(parser, "rx", required=True, default=True)
-        access.add_pin_argument(parser, "tx", required=True, default=True)
-        access.add_pin_argument(parser, "reset", default=True)
-        access.add_pin_argument(parser, "cnvss")
-        # access.add_pin_argument(parser, "mode")
+        access.add_pins_argument(parser, "rx", required=True, default=True)
+        access.add_pins_argument(parser, "tx", required=True, default=True)
+        access.add_pins_argument(parser, "reset", default=True)
+        access.add_pins_argument(parser, "cnvss")
+        # access.add_pins_argument(parser, "mode")
 
     def build(self, target, args):
         self.__bit_cyc_for_baud = {
@@ -344,10 +344,10 @@ class ProgramM16CApplet(GlasgowApplet):
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         subtarget = iface.add_subtarget(ProgramM16CSubtarget(
             ports=iface.get_port_group(
-                rx    = args.pin_rx,
-                tx    = args.pin_tx,
-                reset = args.pin_reset,
-                cnvss = args.pin_cnvss
+                rx    = args.rx,
+                tx    = args.tx,
+                reset = args.reset,
+                cnvss = args.cnvss
             ),
             out_fifo=iface.get_out_fifo(),
             in_fifo=iface.get_in_fifo(),

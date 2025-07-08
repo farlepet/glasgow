@@ -42,17 +42,25 @@ The Glasgow software is a set of building blocks designed to eliminate incidenta
 What can I do with Glasgow?
 ---------------------------
 
-* communicate via UART
+* control pins as :ref:`GPIO <applet.control.gpio>`
 
-  * automatically determine and follow the baud rate of device under test
+* communicate via :ref:`UART <applet.interface.uart>`
 
-* initiate transactions via SPI or I²C
+  * automatically measure and adjust baud rate
+
+* analyze :ref:`UART <applet.interface.uart_analyzer>` transactions
+
+* initiate SPI, :ref:`QSPI <applet.interface.qspi_controller>`, or I²C transactions
+
+* analyze :ref:`SPI <applet.interface.spi_analyzer>` and :ref:`QSPI <applet.interface.qspi_analyzer>` transactions at up to ~100 MHz
 
 * read and write 24-series I²C EEPROMs
 
-* read and write 25-series SPI Flash memories
+* read and write :ref:`25-series SPI Flash memories <applet.memory._25x>`
 
   * determine memory parameters via SFDP
+
+  * :ref:`extract data and SFDP information <applet.memory._25x.tool>` from SPI transaction captures
 
 * read and write ONFI-compatible Flash memories
 
@@ -62,17 +70,27 @@ What can I do with Glasgow?
 
   * determine the extent of floating gate charge decay and rescue data
 
-* program and verify AVR microcontrollers with SPI interface
+* program and verify AVR microcontrollers via SPI
 
-* automatically determine unknown JTAG pinout
+* automatically :ref:`determine JTAG pinout <applet.interface.jtag_pinout>`
 
-* play back JTAG SVF files
+* probe `IEEE 1149.1`_ compatible devices via :ref:`JTAG <applet.interface.jtag_probe>`
 
-* debug ARC processors via JTAG
+  * play back JTAG SVF files
 
-* debug some MIPS processors via EJTAG
+  * :ref:`debug ARM7TDMI processors <applet.debug.arm.arm7>` via JTAG
 
-* program and verify XC9500XL CPLDs via JTAG
+  * debug ARC processors via JTAG
+
+  * debug MIPS processors via EJTAG
+
+  * program and verify XC9500XL CPLDs via JTAG
+
+  * :ref:`expose JTAG to Vivado <applet.bridge.jtag_xvc>`
+
+* probe Arm Cortex processors via :ref:`SWD <applet.interface.swd_probe>`
+
+  * :ref:`debug Arm Cortex processors <applet.bridge.probe_rs>` via `probe-rs <https://probe.rs>`_
 
 * communicate using nRF24L01(+) radios
 
@@ -85,6 +103,9 @@ What can I do with Glasgow?
 * ... and more!
 
 Everything above can be done with only a Glasgow revC board, some wires, and depending on the device under test, external power.
+
+.. _IEEE 1149.1: https://ieeexplore.ieee.org/document/6515989
+
 
 What does using Glasgow look like?
 ----------------------------------
@@ -105,6 +126,10 @@ Glasgow would not be possible without the `open-source iCE40 FPGA toolchain <ice
 Implementing reliable, high-performance USB communication is not trivial—packetization, buffering, and USB quirks add up. Glasgow abstracts away USB: on the FPGA, the applet gateware writes to or reads from a FIFO, and on the host, applet software writes to or reads from a socket-like interface. Idiomatic Python code can communicate at maximum USB 2 bulk bandwidth on a modern PC without additional effort. Moreover, when a future Glasgow revision adds Ethernet next to USB, no changes to applet code will be necessary.
 
 Debugging applets can be hard, especially if bidirectional communication over the same wires is involved. Glasgow provides a built-in cycle-accurate logic analyzer that can relate the I/O pin level and direction changes to commands and responses received and sent by the applet. The logic analyzer compresses waveforms and can pause the applet if its buffer is about to overflow.
+
+.. caution::
+
+   The built-in logic analyzer has been removed from the codebase pending internal architecture improvements. It will be reinstated once a high-quality implementation becomes feasible.
 
 .. _Python 3: https://www.python.org/
 .. _Amaranth: https://github.com/amaranth-lang/amaranth/

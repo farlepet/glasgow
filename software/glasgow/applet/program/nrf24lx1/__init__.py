@@ -13,7 +13,7 @@ from amaranth.lib import io
 from fx2.format import input_data, output_data
 
 from ....support.logging import dump_hex
-from ...interface.spi_controller import SPIControllerSubtarget, SPIControllerInterface
+from ...interface.spi_controller_deprecated import SPIControllerSubtarget, SPIControllerInterface
 from ... import *
 
 
@@ -185,12 +185,12 @@ class ProgramNRF24Lx1Applet(GlasgowApplet):
         access.add_build_arguments(parser)
 
         # Order matches the pin order, in clockwise direction.
-        access.add_pin_argument(parser, "prog",  default=True)
-        access.add_pin_argument(parser, "sck",   default=True)
-        access.add_pin_argument(parser, "copi",  default=True)
-        access.add_pin_argument(parser, "cipo",  default=True)
-        access.add_pin_argument(parser, "cs",    default=True)
-        access.add_pin_argument(parser, "reset", default=True)
+        access.add_pins_argument(parser, "prog",  default=True)
+        access.add_pins_argument(parser, "sck",   default=True)
+        access.add_pins_argument(parser, "copi",  default=True)
+        access.add_pins_argument(parser, "cipo",  default=True)
+        access.add_pins_argument(parser, "cs",    default=True)
+        access.add_pins_argument(parser, "reset", default=True)
 
         parser.add_argument(
             "-f", "--frequency", metavar="FREQ", type=int, default=1000,
@@ -202,12 +202,12 @@ class ProgramNRF24Lx1Applet(GlasgowApplet):
 
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         ports = iface.get_port_group(
-            prog  = args.pin_prog,
-            sck   = args.pin_sck,
-            copi  = args.pin_copi,
-            cipo  = args.pin_cipo,
-            cs    = args.pin_cs,
-            reset = args.pin_reset
+            prog  = args.prog,
+            sck   = args.sck,
+            copi  = args.copi,
+            cipo  = args.cipo,
+            cs    = args.cs,
+            reset = args.reset
         )
 
         controller = SPIControllerSubtarget(

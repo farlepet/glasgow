@@ -93,15 +93,15 @@ class SensorPMSx003Applet(GlasgowApplet):
     def add_build_arguments(cls, parser, access):
         super().add_build_arguments(parser, access)
 
-        access.add_pin_argument(parser, "rx", default=True)
-        access.add_pin_argument(parser, "tx", default=True)
+        access.add_pins_argument(parser, "rx", default=True)
+        access.add_pins_argument(parser, "tx", default=True)
 
     def build(self, target, args):
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         iface.add_subtarget(PMSx003Subtarget(
             ports=iface.get_port_group(
-                rx = args.pin_rx,
-                tx = args.pin_tx
+                rx = args.rx,
+                tx = args.tx
             ),
             in_fifo=iface.get_in_fifo(),
             out_fifo=iface.get_out_fifo(),

@@ -152,7 +152,7 @@ class VideoWS2812OutputApplet(GlasgowApplet):
     def add_build_arguments(cls, parser, access):
         super().add_build_arguments(parser, access)
 
-        access.add_pin_set_argument(parser, "out", width=range(1, 17), required=True)
+        access.add_pins_argument(parser, "out", width=range(1, 17), required=True)
         parser.add_argument(
             "-c", "--count", metavar="N", type=int, required=True,
             help="set the number of LEDs per string")
@@ -165,7 +165,7 @@ class VideoWS2812OutputApplet(GlasgowApplet):
 
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         subtarget = iface.add_subtarget(VideoWS2812OutputSubtarget(
-            ports=iface.get_port_group(out=args.pin_set_out),
+            ports=iface.get_port_group(out=args.out),
             count=args.count,
             pix_in_size=self.pix_in_size,
             pix_out_size=pix_out_size,
@@ -184,7 +184,7 @@ class VideoWS2812OutputApplet(GlasgowApplet):
             help="set the number of frames to buffer internally (buffered twice)")
 
     async def run(self, device, args):
-        buffer_size = len(args.pin_set_out) * args.count * self.pix_in_size * args.buffer
+        buffer_size = len(args.out) * args.count * self.pix_in_size * args.buffer
         return await device.demultiplexer.claim_interface(self, self.mux_interface, args, write_buffer_size=buffer_size)
 
     @classmethod
@@ -192,9 +192,10 @@ class VideoWS2812OutputApplet(GlasgowApplet):
         ServerEndpoint.add_argument(parser, "endpoint")
 
     async def interact(self, device, args, leds):
-        frame_size = len(args.pin_set_out) * args.count * self.pix_in_size
+        frame_size = len(args.out) * args.count * self.pix_in_size
         buffer_size = frame_size * args.buffer
-        endpoint = await ServerEndpoint("socket", self.logger, args.endpoint, queue_size=buffer_size)
+        endpoint = await ServerEndpoint("socket", self.logger, args.endpoint, queue_size=buffer_size,
+            deprecated_cancel_on_eof=True)
         while True:
             try:
                 data = await asyncio.shield(endpoint.recv(buffer_size))

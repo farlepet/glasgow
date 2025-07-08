@@ -1,17 +1,24 @@
-import os, time
+import sys, os, os.path
 is_production = True if os.getenv("DOCS_IS_PRODUCTION", "").lower() in ('1', 'yes', 'true') else False
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "software"))
+import glasgow
 
 html_title = project = "Glasgow Interface\u00a0Explorer"
 release = version = ""
-copyright = time.strftime("2020—%Y, Glasgow Interface Explorer contributors")
+copyright = "2020—%Y, Glasgow Interface Explorer contributors"
 
 extensions = [
     "myst_parser",
     "sphinx.ext.todo",
     "sphinx.ext.intersphinx",
+    "sphinx.ext.autodoc",
     "sphinx_copybutton",
     "sphinx_inline_tabs",
+    "sphinxcontrib.autoprogram",
 ]
+
+highlight_language = "text"
 
 todo_include_todos = True
 todo_emit_warnings = True
@@ -59,7 +66,7 @@ if is_production:
         },
         "announcement":
             "Production units are being shipped by Mouser. "
-            "<a href='https://crowdsupply.com/1bitsquared/glasgow'>Pre-order yours now!</a>"
+            "<a href='https://crowdsupply.com/1bitsquared/glasgow'>Order yours now!</a>"
     })
 else:
     html_theme_options.update({
@@ -82,6 +89,12 @@ linkcheck_ignore = [
     r"^https://mouser\.com/",
     # For unknown reasons, is (mostly) unreachable from GitHub CI runners.
     r"^https://chaos\.social/",
+    # As above.
+    r"^https://en\.uesp\.net/",
+    # As above.
+    r"^https://www\.gnu\.org/",
+    # Part of applet option help.
+    r"^tcp:",
 ]
 
 linkcheck_anchors_ignore_for_url = [
@@ -90,3 +103,8 @@ linkcheck_anchors_ignore_for_url = [
     # GitHub is a React-based SPA; even README content is included as a JSON payload.
     r"^https://github\.com/",
 ]
+
+# Attempt to keep linkcheck times manageable.
+linkcheck_retries = 5
+linkcheck_timeout = 5
+linkcheck_workers = 50

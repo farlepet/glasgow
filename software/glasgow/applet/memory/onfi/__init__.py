@@ -418,44 +418,44 @@ class MemoryONFIApplet(GlasgowApplet):
     The NAND Flash command set is not standardized in practice. This applet uses the following
     commands when identifying the memory:
 
-        * Cmd 0xFF: Reset (all devices)
-        * Cmd 0x90 Addr 0x00: Read ID, JEDEC Manufacturer and Device (all devices)
-        * Cmd 0x90 Addr 0x20: Read ID, ONFI Signature (ONFI and some non-ONFI devices)
-        * Cmd 0xEC: Read Parameter Page (ONFI only)
+    * Cmd 0xFF: Reset (all devices)
+    * Cmd 0x90 Addr 0x00: Read ID, JEDEC Manufacturer and Device (all devices)
+    * Cmd 0x90 Addr 0x20: Read ID, ONFI Signature (ONFI and some non-ONFI devices)
+    * Cmd 0xEC: Read Parameter Page (ONFI only)
 
     If the memory doesn't respond or gives invalid response to ONFI commands, it can still be
     used, but the array parameters need to be specified explicitly.
 
     The applet use the following commands while reading and writing data:
 
-        * Cmd 0x70: Read Status (all devices)
-        * Cmd 0x00 Addr Col1..2,Row1..3 Cmd 0x30: Read (all devices)
-        * Cmd 0x60 Addr Row1..3 Cmd 0xD0: Erase (all devices)
-        * Cmd 0x80 Addr Col1..2,Row1..3 [Cmd 0x85 Col1..2]+ Cmd 0x10: Page Program (all devices)
+    * Cmd 0x70: Read Status (all devices)
+    * Cmd 0x00 Addr Col1..2,Row1..3 Cmd 0x30: Read (all devices)
+    * Cmd 0x60 Addr Row1..3 Cmd 0xD0: Erase (all devices)
+    * Cmd 0x80 Addr Col1..2,Row1..3 [Cmd 0x85 Col1..2]+ Cmd 0x10: Page Program (all devices)
     """
 
     @classmethod
     def add_build_arguments(cls, parser, access):
         access.add_build_arguments(parser)
-        access.add_pin_set_argument(parser, "io", 8, default=True)
-        access.add_pin_argument(parser, "cle", default=True)
-        access.add_pin_argument(parser, "ale", default=True)
-        access.add_pin_argument(parser, "re", default=True)
-        access.add_pin_argument(parser, "we", default=True)
-        access.add_pin_argument(parser, "r_b", default=True)
-        access.add_pin_set_argument(parser, "ce", range(1, 5), default=2)
+        access.add_pins_argument(parser, "io", 8, default=True)
+        access.add_pins_argument(parser, "cle", default=True)
+        access.add_pins_argument(parser, "ale", default=True)
+        access.add_pins_argument(parser, "re", default=True)
+        access.add_pins_argument(parser, "we", default=True)
+        access.add_pins_argument(parser, "r_b", default=True)
+        access.add_pins_argument(parser, "ce", range(1, 5), default=2)
 
     def build(self, target, args):
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         iface.add_subtarget(MemoryONFISubtarget(
             ports=iface.get_port_group(
-                io  = args.pin_set_io,
-                cle = args.pin_cle,
-                ale = args.pin_ale,
-                re  = args.pin_re,
-                we  = args.pin_we,
-                r_b = args.pin_r_b,
-                ce  = args.pin_set_ce
+                io  = args.io,
+                cle = args.cle,
+                ale = args.ale,
+                re  = args.re,
+                we  = args.we,
+                r_b = args.r_b,
+                ce  = args.ce
             ),
             in_fifo=iface.get_in_fifo(auto_flush=False),
             out_fifo=iface.get_out_fifo(),
@@ -470,16 +470,16 @@ class MemoryONFIApplet(GlasgowApplet):
             help="select chip connected to CE# signal CHIP (one of: 1..4, default: 1)")
 
     async def run(self, device, args):
-        iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args, pull_high={args.pin_r_b})
+        iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args, pull_high={args.r_b})
         onfi_iface = ONFIInterface(iface, self.logger)
 
         # Reset every target, to make sure all of them are in a defined state and aren't driving
         # the shared data bus.
-        for chip in range(len(args.pin_set_ce)):
+        for chip in range(len(args.ce)):
             await onfi_iface.select(chip)
             await onfi_iface.reset()
 
-        available_ce = range(1, 1 + len(args.pin_set_ce))
+        available_ce = range(1, 1 + len(args.ce))
         if args.chip not in available_ce:
             raise GlasgowAppletError("cannot select chip {}; available select signals are {}"
                 .format(args.chip, ", ".join(f"CE{n}#" for n in available_ce)))

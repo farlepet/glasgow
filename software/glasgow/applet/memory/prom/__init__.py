@@ -476,24 +476,24 @@ class MemoryPROMApplet(GlasgowApplet):
     To handle the large amount of address lines used by parallel memories, this applet supports
     two kinds of addressing: direct and indirect. The full address word (specified with
     the --a-bits option) is split into low and high parts. The low part is presented directly on
-    the IO pins (specified with the --pins-a option). The high part is presented through
-    a SIPO shift register (clock and data input specified with the --pin-a-clk and --pin-a-si
-    options respectively), such as a chain of 74HC164 ICs of the appropriate length.
-    Additionally, for shift registers with latches, specify --pin-a-lat to drive the latch pins.
+    the IO pins (specified with the --a option). The high part is presented through a SIPO shift
+    register (clock and data input specified with the --a-clk and --a-si options respectively),
+    such as a chain of 74HC164 ICs of the appropriate length. Additionally, for shift registers
+    with latches, specify --a-lat to drive the latch pins.
     """
 
     @classmethod
     def add_build_arguments(cls, parser, access):
         super().add_build_arguments(parser, access)
 
-        access.add_pin_set_argument(parser, "dq", width=range(1, 16), default=8)
-        access.add_pin_set_argument(parser, "a",  width=range(0, 24), default=0)
-        access.add_pin_argument(parser, "a-clk")
-        access.add_pin_argument(parser, "a-si")
-        access.add_pin_argument(parser, "a-lat")
-        access.add_pin_argument(parser, "oe")
-        access.add_pin_argument(parser, "we")
-        access.add_pin_argument(parser, "ce")
+        access.add_pins_argument(parser, "dq", width=range(1, 16), default=8)
+        access.add_pins_argument(parser, "a",  width=range(0, 24), default=0)
+        access.add_pins_argument(parser, "a_clk")
+        access.add_pins_argument(parser, "a_si")
+        access.add_pins_argument(parser, "a_lat")
+        access.add_pins_argument(parser, "oe")
+        access.add_pins_argument(parser, "we")
+        access.add_pins_argument(parser, "ce")
 
         parser.add_argument(
             "--a-bits", metavar="COUNT", type=int,
@@ -514,21 +514,21 @@ class MemoryPROMApplet(GlasgowApplet):
 
     def build(self, target, args):
         if args.a_bits is None:
-            args.a_bits = len(args.pin_set_a)
+            args.a_bits = len(args.a)
         if args.write_cycle is None:
             args.write_cycle = args.read_cycle
 
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         bus = MemoryPROMBus(
             ports=iface.get_port_group(
-                dq=args.pin_set_dq,
-                a=args.pin_set_a,
-                a_clk=args.pin_a_clk,
-                a_si=args.pin_a_si,
-                a_lat=args.pin_a_lat,
-                oe=args.pin_oe,
-                we=args.pin_we,
-                ce=args.pin_ce,
+                dq=args.dq,
+                a=args.a,
+                a_clk=args.a_clk,
+                a_si=args.a_si,
+                a_lat=args.a_lat,
+                oe=args.oe,
+                we=args.we,
+                ce=args.ce,
             ),
             a_bits=args.a_bits,
             sh_freq=args.shift_freq * 1e6,
@@ -544,7 +544,7 @@ class MemoryPROMApplet(GlasgowApplet):
 
     async def run(self, device, args):
         iface = await device.demultiplexer.claim_interface(self, self.mux_interface, args)
-        return MemoryPROMInterface(iface, self.logger, args.a_bits, len(args.pin_set_dq))
+        return MemoryPROMInterface(iface, self.logger, args.a_bits, len(args.dq))
 
     @classmethod
     def add_interact_arguments(cls, parser):
@@ -661,7 +661,7 @@ class MemoryPROMApplet(GlasgowApplet):
 
     async def interact(self, device, args, prom_iface):
         a_bits  = args.a_bits
-        dq_bits = len(args.pin_set_dq)
+        dq_bits = len(args.dq)
         depth   = 1 << a_bits
 
         if args.operation == "read":
@@ -760,7 +760,7 @@ class MemoryPROMApplet(GlasgowApplet):
             step_num = 0
             while True:
                 self.logger.info("step %d (%.2f V)", step_num, voltage)
-                await device.set_voltage(args.port_spec, voltage)
+                await device.set_voltage("AB", voltage)
 
                 initial_data = await prom_iface.read(0, depth)
                 for sample_num in range(args.samples):
@@ -792,7 +792,7 @@ class MemoryPROMApplet(GlasgowApplet):
             step_num = 0
             while True:
                 self.logger.info("step %d (%.2f V)", step_num, voltage)
-                await device.set_voltage(args.port_spec, voltage)
+                await device.set_voltage("AB", voltage)
 
                 popcounts = []
                 for sample_num in range(args.samples):

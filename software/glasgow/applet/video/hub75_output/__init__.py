@@ -116,12 +116,12 @@ class VideoHub75OutputApplet(GlasgowApplet):
     def add_build_arguments(cls, parser, access):
         super().add_build_arguments(parser, access)
 
-        access.add_pin_set_argument(parser, "rgb1", width=3,          default=[0,1,2])
-        access.add_pin_set_argument(parser, "rgb2", width=3,          default=[3,4,5])
-        access.add_pin_set_argument(parser, "addr", width=range(1,6), default=[8,9,10,11,12])
-        access.add_pin_argument(parser,     "clk",                    default=13)
-        access.add_pin_argument(parser,     "lat",                    default=14)
-        access.add_pin_argument(parser,     "oe",                     default=15)
+        access.add_pins_argument(parser, "rgb1", width=3,          default="A0:2")
+        access.add_pins_argument(parser, "rgb2", width=3,          default="A3:5")
+        access.add_pins_argument(parser, "addr", width=range(1,6), default="B0:4")
+        access.add_pins_argument(parser, "clk",                    default="B5")
+        access.add_pins_argument(parser, "lat",                    default="B6")
+        access.add_pins_argument(parser, "oe",                     default="B7")
 
         parser.add_argument(
             "--px-width", metavar="PX-WIDTH", type=int, default=64,
@@ -137,7 +137,7 @@ class VideoHub75OutputApplet(GlasgowApplet):
             help="the exposure delay, directly impacts brightness and refresh rate (default: %(default)s)")
 
     def build(self, target, args):
-        num_addr_bits = len(args.pin_set_addr)
+        num_addr_bits = len(args.addr)
         max_px_height = pow(2, num_addr_bits) * 2
         if args.px_height > max_px_height:
             raise GlasgowAppletError("Cannot have a vertical panel resolution of {} with only {} address bits..."
@@ -146,12 +146,12 @@ class VideoHub75OutputApplet(GlasgowApplet):
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         subtarget = iface.add_subtarget(VideoHub75OutputSubtarget(
             ports=iface.get_port_group(
-                rgb1 = args.pin_set_rgb1,
-                rgb2 = args.pin_set_rgb2,
-                addr = args.pin_set_addr,
-                clk  = args.pin_clk,
-                lat  = args.pin_lat,
-                oe   = args.pin_oe
+                rgb1 = args.rgb1,
+                rgb2 = args.rgb2,
+                addr = args.addr,
+                clk  = args.clk,
+                lat  = args.lat,
+                oe   = args.oe
             ),
             px_width=args.px_width,
             px_height=args.px_height,

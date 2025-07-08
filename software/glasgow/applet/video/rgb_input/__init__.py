@@ -148,10 +148,10 @@ class VideoRGBInputApplet(GlasgowApplet):
     @classmethod
     def add_build_arguments(cls, parser, access):
         access.add_build_arguments(parser)
-        access.add_pin_set_argument(parser, "r", width=5)
-        access.add_pin_set_argument(parser, "g", width=5)
-        access.add_pin_set_argument(parser, "b", width=5)
-        access.add_pin_argument(parser, "dck")
+        access.add_pins_argument(parser, "r", width=5)
+        access.add_pins_argument(parser, "g", width=5)
+        access.add_pins_argument(parser, "b", width=5)
+        access.add_pins_argument(parser, "dck")
         parser.add_argument("--rows", type=int,
             help="LCD row count")
         parser.add_argument("--columns", type=int,
@@ -166,10 +166,10 @@ class VideoRGBInputApplet(GlasgowApplet):
             columns=args.columns,
             vblank=args.vblank,
             ports=iface.get_port_group(
-                dck = args.pin_dck,
-                r   = args.pin_set_r,
-                g   = args.pin_set_g,
-                b   = args.pin_set_b
+                dck = args.dck,
+                r   = args.r,
+                g   = args.g,
+                b   = args.b
             ),
             in_fifo=iface.get_in_fifo(depth=512 * 30, auto_flush=False),
             sys_clk_freq=target.sys_clk_freq,

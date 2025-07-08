@@ -12,7 +12,7 @@ from ....support.logging import *
 from ....support.bits import *
 from ....arch.nrf24l import *
 from ....arch.nrf24l.rf import *
-from ...interface.spi_controller import SPIControllerSubtarget, SPIControllerInterface
+from ...interface.spi_controller_deprecated import SPIControllerSubtarget, SPIControllerInterface
 from ... import *
 
 
@@ -30,7 +30,7 @@ class RadioNRF24L01Subtarget(Elaboratable):
         m = Module()
 
         m.submodules.controller = self.controller
-        
+
         m.submodules.ce_buffer = ce_buffer = io.Buffer("o", self.port_ce)
         m.d.comb += ce_buffer.o.eq(self.dut_ce)
 
@@ -202,12 +202,12 @@ class RadioNRF24L01Applet(GlasgowApplet):
         access.add_build_arguments(parser)
 
         # Order matches the pin order, in clockwise direction.
-        access.add_pin_argument(parser, "ce",   default=True)
-        access.add_pin_argument(parser, "cs",   default=True)
-        access.add_pin_argument(parser, "sck",  default=True)
-        access.add_pin_argument(parser, "copi", default=True)
-        access.add_pin_argument(parser, "cipo", default=True)
-        access.add_pin_argument(parser, "irq",  default=True)
+        access.add_pins_argument(parser, "ce",   default=True)
+        access.add_pins_argument(parser, "cs",   default=True)
+        access.add_pins_argument(parser, "sck",  default=True)
+        access.add_pins_argument(parser, "copi", default=True)
+        access.add_pins_argument(parser, "cipo", default=True)
+        access.add_pins_argument(parser, "irq",  default=True)
 
         parser.add_argument(
             "-f", "--frequency", metavar="FREQ", type=int, default=1000,
@@ -218,12 +218,12 @@ class RadioNRF24L01Applet(GlasgowApplet):
 
         self.mux_interface = iface = target.multiplexer.claim_interface(self, args)
         ports=iface.get_port_group(
-                ce   = args.pin_ce,
-                cs   = args.pin_cs,
-                sck  = args.pin_sck,
-                copi = args.pin_copi,
-                cipo = args.pin_cipo,
-                irq  = args.pin_irq
+                ce   = args.ce,
+                cs   = args.cs,
+                sck  = args.sck,
+                copi = args.copi,
+                cipo = args.cipo,
+                irq  = args.irq
             )
 
         controller = SPIControllerSubtarget(
